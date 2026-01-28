@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 import { createClient } from '@/lib/supabase/server'
 
 async function signOut() {
@@ -22,20 +23,16 @@ export default async function AdminLayout({
       <header className="bg-jl-charcoal text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
-            <div className="flex items-center gap-8">
-              <Link href="/admin" className="font-semibold text-lg">
-                Quote Tracker
+            <div className="flex items-center">
+              <Link href="/admin/quotes">
+                <Image
+                  src="/images/jaipur-living-logo-white.svg"
+                  alt="Jaipur Living"
+                  width={180}
+                  height={19}
+                  priority
+                />
               </Link>
-              {user && (
-                <nav className="flex items-center gap-6">
-                  <Link
-                    href="/admin/quotes"
-                    className="text-sm text-gray-300 hover:text-white transition-colors"
-                  >
-                    Quotes
-                  </Link>
-                </nav>
-              )}
             </div>
             {user && (
               <div className="flex items-center gap-4">
