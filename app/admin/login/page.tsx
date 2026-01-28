@@ -41,7 +41,7 @@ export default function AdminLoginPage() {
           className="text-center mb-8"
           style={{ fontSize: '36px', fontWeight: 100, color: '#393939' }}
         >
-          Custom Rug Quote Tracking
+          Custom Quote Tracking
         </h1>
         <div className="bg-white rounded-lg shadow-sm border border-jl-border p-8">
           <h1 className="text-2xl font-semibold text-jl-charcoal text-center mb-6">
