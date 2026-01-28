@@ -1,4 +1,3 @@
-import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { Quote } from '@/lib/types'
 import { CustomerQuotesTable } from './CustomerQuotesTable'
@@ -27,40 +26,24 @@ export default async function CustomerQuotesPage({ params }: PageProps) {
   }
 
   return (
-    <div className="p-4 sm:p-8">
+    <div className="p-4 sm:p-8 bg-white min-h-screen">
       <div className="max-w-6xl mx-auto">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="text-2xl font-semibold text-jl-charcoal">
-              My Custom Rug Quotes
-            </h1>
-            <p className="text-jl-muted mt-1">
-              Customer: {decodedCustomerNumber}
-            </p>
-          </div>
-          <Link
-            href="/portal"
-            className="text-sm text-jl-secondary hover:text-jl-charcoal underline"
-          >
-            Change Customer
-          </Link>
+        <div className="mb-6">
+          <h1 className="font-thin text-[#393939]" style={{ fontSize: '22px', fontWeight: 100 }}>
+            My Custom Rug Quotes
+          </h1>
+          <p className="mt-1" style={{ color: '#8b785d', fontSize: '14px' }}>
+            Customer: {decodedCustomerNumber}
+          </p>
         </div>
 
         {quotes && quotes.length > 0 ? (
-          <div className="bg-white rounded-lg shadow-sm border border-jl-border overflow-hidden">
-            <CustomerQuotesTable quotes={quotes as Quote[]} />
-          </div>
+          <CustomerQuotesTable quotes={quotes as Quote[]} />
         ) : (
-          <div className="bg-white rounded-lg shadow-sm border border-jl-border p-12 text-center">
-            <p className="text-jl-muted">
+          <div className="p-12 text-center">
+            <p className="text-gray-600">
               No quotes found for customer number: {decodedCustomerNumber}
             </p>
-            <Link
-              href="/portal"
-              className="inline-block mt-4 text-sm text-jl-charcoal hover:underline"
-            >
-              Try a different customer number
-            </Link>
           </div>
         )}
       </div>

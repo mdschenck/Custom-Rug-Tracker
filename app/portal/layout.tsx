@@ -5,7 +5,7 @@ export default function PortalLayout({
 }) {
   // Minimal layout for iFrame embedding - no header/navigation
   return (
-    <div className="min-h-screen bg-jl-offwhite">
+    <div className="min-h-screen bg-white">
       {children}
     </div>
   )
