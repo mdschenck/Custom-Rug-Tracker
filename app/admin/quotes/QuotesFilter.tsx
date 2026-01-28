@@ -54,7 +54,7 @@ export function QuotesFilter({
       <form onSubmit={handleSearchSubmit} className="flex-1 flex gap-2">
         <div className="flex-1">
           <Input
-            placeholder="Search by name, number, or quote #..."
+            placeholder="Search by customer name, customer #, or quote #..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />

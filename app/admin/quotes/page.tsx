@@ -6,6 +6,8 @@ import { QUOTE_STATUSES } from '@/lib/constants'
 import { Button } from '@/components/ui'
 import { QuotesTable } from '@/components/QuotesTable'
 import { QuotesFilter } from './QuotesFilter'
+import { ExportQuotesButton } from '@/components/ExportQuotesButton'
+import { ImportQuotesButton } from '@/components/ImportQuotesButton'
 
 interface SearchParams {
   status?: string
@@ -62,9 +64,16 @@ export default async function AdminQuotesPage({
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-semibold text-jl-charcoal">Quotes</h1>
-        <Link href="/admin/quotes/new">
-          <Button>Create New Quote</Button>
-        </Link>
+        <div className="flex items-center gap-3">
+          <ExportQuotesButton
+            filteredQuotes={quotes as Quote[]}
+            hasFilters={!!(status && status !== 'all') || !!search}
+          />
+          <ImportQuotesButton />
+          <Link href="/admin/quotes/new">
+            <Button>Create New Quote</Button>
+          </Link>
+        </div>
       </div>
 
       <div className="bg-white rounded-lg shadow-sm border border-jl-border">
