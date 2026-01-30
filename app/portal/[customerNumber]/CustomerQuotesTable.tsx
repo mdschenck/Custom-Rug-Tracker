@@ -40,12 +40,12 @@ function ProgressBar({ currentStatus }: ProgressBarProps) {
       <div className="relative h-2 bg-gray-300 rounded-full">
         {/* Filled portion */}
         <div
-          className="absolute left-0 top-0 h-full bg-[#1f883d] rounded-full"
+          className="absolute left-0 top-0 h-full bg-[#393939] rounded-full"
           style={{ width: `${progressPercent}%` }}
         />
         {/* Current position indicator */}
         <div
-          className="absolute top-1/2 -translate-y-1/2 w-4 h-4 bg-[#1f883d] rounded-full border-2 border-white shadow"
+          className="absolute top-1/2 -translate-y-1/2 w-4 h-4 bg-[#393939] rounded-full border-2 border-white shadow"
           style={{ left: `${progressPercent}%`, transform: 'translate(-50%, -50%)' }}
         />
       </div>
