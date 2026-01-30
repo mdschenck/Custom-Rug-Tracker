@@ -28,7 +28,7 @@ function ProgressBar({ currentStatus }: ProgressBarProps) {
       <div className="relative flex justify-between mb-2">
         <span className="text-[10px] text-[#393939]">{firstStatus}</span>
         <span
-          className="text-[10px] text-[#393939] font-semibold absolute"
+          className={`text-[10px] font-semibold absolute ${currentStatus === 'Swatch Approval Pending' ? 'text-[#d73a49]' : 'text-[#393939]'}`}
           style={{ left: `${progressPercent}%`, transform: 'translateX(-50%)' }}
         >
           {currentStatus}
@@ -40,12 +40,12 @@ function ProgressBar({ currentStatus }: ProgressBarProps) {
       <div className="relative h-2 bg-gray-300 rounded-full">
         {/* Filled portion */}
         <div
-          className="absolute left-0 top-0 h-full bg-[#393939] rounded-full"
+          className="absolute left-0 top-0 h-full bg-[#1f883d] rounded-full"
           style={{ width: `${progressPercent}%` }}
         />
         {/* Current position indicator */}
         <div
-          className="absolute top-1/2 -translate-y-1/2 w-4 h-4 bg-[#393939] rounded-full border-2 border-white shadow"
+          className="absolute top-1/2 -translate-y-1/2 w-4 h-4 bg-[#1f883d] rounded-full border-2 border-white shadow"
           style={{ left: `${progressPercent}%`, transform: 'translate(-50%, -50%)' }}
         />
       </div>

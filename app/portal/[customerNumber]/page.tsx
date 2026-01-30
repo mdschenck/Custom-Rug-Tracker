@@ -32,9 +32,6 @@ export default async function CustomerQuotesPage({ params }: PageProps) {
           <h1 className="font-thin text-[#393939]" style={{ fontSize: '22px', fontWeight: 100 }}>
             My Custom Rug Quotes
           </h1>
-          <p className="mt-1" style={{ color: '#8b785d', fontSize: '14px' }}>
-            Customer: {decodedCustomerNumber}
-          </p>
         </div>
 
         {quotes && quotes.length > 0 ? (
