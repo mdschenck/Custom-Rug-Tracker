@@ -6,8 +6,15 @@ export interface Quote {
   customer_name: string
   customer_number: string
   customer_company: string
+  product_name: string | null
   cad_file_url: string | null
   image_render_url: string | null
+  cad_requested: boolean
+  cad_approved: boolean
+  cad_approved_at: string | null
+  swatch_approved: boolean
+  swatch_approved_at: string | null
+  swatch_approved_by: string | null
   status: QuoteStatus
   sales_order_number: string | null
   custom_rug_sku: string | null
@@ -15,13 +22,32 @@ export interface Quote {
   updated_at: string
 }
 
+export interface QuoteNote {
+  id: string
+  quote_id: string
+  content: string
+  created_by: string
+  created_at: string
+}
+
+export interface QuoteNoteInsert {
+  quote_id: string
+  content: string
+  created_by: string
+}
+
 export interface QuoteInsert {
   quote_number?: string
   customer_name: string
   customer_number: string
   customer_company: string
+  product_name?: string | null
   cad_file_url?: string | null
   image_render_url?: string | null
+  cad_requested?: boolean
+  cad_approved?: boolean
+  swatch_approved?: boolean
+  swatch_approved_by?: string | null
   status?: QuoteStatus
   sales_order_number?: string | null
   custom_rug_sku?: string | null
@@ -31,8 +57,13 @@ export interface QuoteUpdate {
   customer_name?: string
   customer_number?: string
   customer_company?: string
+  product_name?: string | null
   cad_file_url?: string | null
   image_render_url?: string | null
+  cad_requested?: boolean
+  cad_approved?: boolean
+  swatch_approved?: boolean
+  swatch_approved_by?: string | null
   status?: QuoteStatus
   sales_order_number?: string | null
   custom_rug_sku?: string | null
@@ -45,6 +76,11 @@ export type Database = {
         Row: Quote
         Insert: QuoteInsert
         Update: QuoteUpdate
+      }
+      quote_notes: {
+        Row: QuoteNote
+        Insert: QuoteNoteInsert
+        Update: never
       }
       quote_number_sequence: {
         Row: {

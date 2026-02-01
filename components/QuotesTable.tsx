@@ -25,6 +25,7 @@ export function QuotesTable({ quotes, isAdmin = false }: QuotesTableProps) {
       <TableHeader>
         <TableRow>
           <TableHead>Image</TableHead>
+          <TableHead>Product Name</TableHead>
           <TableHead>Quote #</TableHead>
           <TableHead>Customer</TableHead>
           <TableHead>Company</TableHead>
@@ -54,6 +55,7 @@ export function QuotesTable({ quotes, isAdmin = false }: QuotesTableProps) {
                 </div>
               )}
             </TableCell>
+            <TableCell>{quote.product_name || '-'}</TableCell>
             <TableCell className="font-medium">
               {isAdmin ? (
                 <Link

@@ -77,6 +77,7 @@ export default async function EditQuotePage({ params }: PageProps) {
           quote={quote as Quote}
           onSubmit={handleSubmit}
           onDelete={handleDelete}
+          adminEmail={user.email}
         />
       </div>
     </div>

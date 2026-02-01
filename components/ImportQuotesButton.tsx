@@ -9,11 +9,16 @@ interface ParsedRow {
   customer_name: string
   customer_number: string
   customer_company: string
+  product_name?: string
   status?: string
   sales_order_number?: string
   custom_rug_sku?: string
   cad_file_url?: string
   image_render_url?: string
+  cad_requested?: boolean
+  cad_approved?: boolean
+  swatch_approved?: boolean
+  swatch_approved_by?: string
 }
 
 interface ValidationError {
@@ -126,15 +131,29 @@ export function ImportQuotesButton() {
         return // Skip this row
       }
 
+      // Parse boolean fields
+      const parseBool = (val: string): boolean | undefined => {
+        if (!val) return undefined
+        const lower = val.toLowerCase()
+        if (lower === 'true' || lower === '1' || lower === 'yes') return true
+        if (lower === 'false' || lower === '0' || lower === 'no') return false
+        return undefined
+      }
+
       parsed.push({
         customer_name: customerName,
         customer_number: customerNumber,
         customer_company: customerCompany,
+        product_name: getValue('product_name') || undefined,
         status: status || undefined,
         sales_order_number: getValue('sales_order_number') || undefined,
         custom_rug_sku: getValue('custom_rug_sku') || undefined,
         cad_file_url: getValue('cad_file_url') || undefined,
         image_render_url: getValue('image_render_url') || undefined,
+        cad_requested: parseBool(getValue('cad_requested')),
+        cad_approved: parseBool(getValue('cad_approved')),
+        swatch_approved: parseBool(getValue('swatch_approved')),
+        swatch_approved_by: getValue('swatch_approved_by') || undefined,
       })
     })
 

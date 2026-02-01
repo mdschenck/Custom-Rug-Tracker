@@ -29,7 +29,7 @@ export default async function NewQuotePage() {
       </h1>
 
       <div className="bg-white rounded-lg shadow-sm border border-jl-border p-6">
-        <QuoteForm onSubmit={createQuote} />
+        <QuoteForm onSubmit={createQuote} adminEmail={user.email} />
       </div>
     </div>
   )

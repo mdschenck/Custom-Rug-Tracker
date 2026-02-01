@@ -60,6 +60,7 @@ export function CustomerQuotesTable({ quotes }: CustomerQuotesTableProps) {
         <thead>
           <tr className="border-b border-[#393939]">
             <th className="px-4 py-3 text-left text-sm font-normal text-[#393939]">Image</th>
+            <th className="px-4 py-3 text-left text-sm font-normal text-[#393939]">Product Name</th>
             <th className="px-4 py-3 text-left text-sm font-normal text-[#393939]">Quote #</th>
             <th className="px-4 py-3 text-left text-sm font-normal text-[#393939]">Status</th>
             <th className="px-4 py-3 text-left text-sm font-normal text-[#393939]">SKU</th>
@@ -88,6 +89,9 @@ export function CustomerQuotesTable({ quotes }: CustomerQuotesTableProps) {
                       No image
                     </div>
                   )}
+                </td>
+                <td className="px-4 py-3 text-sm text-[#393939]">
+                  {quote.product_name || '-'}
                 </td>
                 <td className="px-4 py-3 text-sm font-medium text-[#393939]">
                   {quote.quote_number}
@@ -124,7 +128,7 @@ export function CustomerQuotesTable({ quotes }: CustomerQuotesTableProps) {
                 </td>
               </tr>
               <tr className="border-b border-[#393939]">
-                <td colSpan={7} className="pb-2">
+                <td colSpan={8} className="pb-2">
                   <ProgressBar currentStatus={quote.status} />
                 </td>
               </tr>
