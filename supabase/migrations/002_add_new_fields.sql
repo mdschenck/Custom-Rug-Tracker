@@ -37,13 +37,14 @@ CREATE POLICY "Admins have full access to quote_notes"
 -- Grant permissions
 GRANT ALL ON quote_notes TO authenticated;
 
--- Function to handle CAD approval timestamp
+-- Function to handle CAD approval (timestamp and status update)
 CREATE OR REPLACE FUNCTION handle_cad_approval()
 RETURNS TRIGGER AS $$
 BEGIN
-  -- When cad_approved changes from false to true, set the timestamp
+  -- When cad_approved changes from false to true, set the timestamp and status
   IF NEW.cad_approved = TRUE AND (OLD.cad_approved = FALSE OR OLD.cad_approved IS NULL) THEN
     NEW.cad_approved_at := NOW();
+    NEW.status := 'CAD Approved';
   END IF;
   -- If cad_approved is set back to false, optionally clear the timestamp
   IF NEW.cad_approved = FALSE AND OLD.cad_approved = TRUE THEN
