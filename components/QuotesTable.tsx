@@ -81,12 +81,6 @@ export function QuotesTable({ quotes, isAdmin = false }: QuotesTableProps) {
             {isAdmin && (
               <TableCell>
                 <div className="flex items-center gap-2">
-                  <Link
-                    href={`/admin/quotes/${quote.id}`}
-                    className="text-sm text-jl-charcoal hover:underline"
-                  >
-                    Edit
-                  </Link>
                   {quote.cad_file_url && (
                     <a
                       href={quote.cad_file_url}
@@ -97,6 +91,12 @@ export function QuotesTable({ quotes, isAdmin = false }: QuotesTableProps) {
                       CAD
                     </a>
                   )}
+                  <Link
+                    href={`/admin/quotes/${quote.id}`}
+                    className="text-sm text-jl-charcoal hover:underline"
+                  >
+                    Edit
+                  </Link>
                 </div>
               </TableCell>
             )}

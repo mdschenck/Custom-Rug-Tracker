@@ -396,20 +396,7 @@ export function QuoteForm({ quote, onSubmit, onDelete, adminEmail }: QuoteFormPr
       </div>
 
       {/* Action Buttons */}
-      <div className="flex items-center justify-between pt-3 border-t border-jl-border">
-        <div>
-          {quote && onDelete && (
-            <Button
-              type="button"
-              variant="danger"
-              onClick={handleDelete}
-              disabled={loading}
-            >
-              Delete Quote
-            </Button>
-          )}
-        </div>
-
+      <div className="flex items-center justify-end pt-3 border-t border-jl-border">
         <div className="flex items-center gap-3">
           <Button
             type="button"
@@ -474,6 +461,26 @@ export function QuoteForm({ quote, onSubmit, onDelete, adminEmail }: QuoteFormPr
           ) : (
             <p className="text-xs text-jl-muted">No activity yet.</p>
           )}
+        </div>
+      )}
+
+      {/* Delete Quote Section - Separated at bottom */}
+      {quote && onDelete && (
+        <div className="border-t border-red-200 pt-6 mt-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-sm font-medium text-red-600">Danger Zone</h3>
+              <p className="text-xs text-jl-muted mt-1">This action cannot be undone.</p>
+            </div>
+            <Button
+              type="button"
+              variant="danger"
+              onClick={handleDelete}
+              disabled={loading}
+            >
+              Delete Quote
+            </Button>
+          </div>
         </div>
       )}
     </form>
