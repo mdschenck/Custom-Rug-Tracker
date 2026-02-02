@@ -118,7 +118,7 @@ export function ApprovalModal({ quote, type, isOpen, onClose, onApprove }: Appro
 
           {/* Swatch-specific Deposit Checkbox */}
           {type === 'swatch' && (
-            <div className="mb-4 p-4 bg-gray-50 border border-gray-200">
+            <div className="mb-4">
               <label className="flex items-start gap-3 cursor-pointer">
                 <input
                   type="checkbox"

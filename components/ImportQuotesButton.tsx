@@ -10,6 +10,7 @@ interface ParsedRow {
   customer_number: string
   customer_company: string
   product_name?: string
+  documents_url?: string
   status?: string
   sales_order_number?: string
   custom_rug_sku?: string
@@ -145,6 +146,7 @@ export function ImportQuotesButton() {
         customer_number: customerNumber,
         customer_company: customerCompany,
         product_name: getValue('product_name') || undefined,
+        documents_url: getValue('documents_url') || undefined,
         status: status || undefined,
         sales_order_number: getValue('sales_order_number') || undefined,
         custom_rug_sku: getValue('custom_rug_sku') || undefined,

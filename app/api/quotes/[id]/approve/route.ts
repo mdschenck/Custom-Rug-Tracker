@@ -34,6 +34,8 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 
     // Prepare update based on approval type
     let updateData: Record<string, unknown> = {}
+    let noteContent = ''
+    const approverName = approved_by || 'Customer'
 
     if (type === 'cad') {
       // Verify quote is in CAD Approval Pending status
@@ -47,6 +49,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         cad_approved: true,
         // The trigger will set cad_approved_at and update status to 'CAD Approved'
       }
+      noteContent = `Status changed to CAD Approved by ${approverName}`
     } else if (type === 'swatch') {
       // Verify quote is in Swatch Approval Pending status
       if (quote.status !== 'Swatch Approval Pending') {
@@ -57,9 +60,10 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       }
       updateData = {
         swatch_approved: true,
-        swatch_approved_by: approved_by || 'Customer',
+        swatch_approved_by: approverName,
         // The trigger will set swatch_approved_at and update status to 'Swatch Approved'
       }
+      noteContent = `Status changed to Swatch Approved by ${approverName}`
     }
 
     // Update the quote
@@ -73,6 +77,15 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
+
+    // Add a note to track the status change
+    await supabase
+      .from('quote_notes')
+      .insert({
+        quote_id: id,
+        content: noteContent,
+        created_by: approverName,
+      })
 
     return NextResponse.json(data)
   } catch (error) {

@@ -31,6 +31,7 @@ export function ExportQuotesButton({ filteredQuotes, hasFilters }: ExportQuotesB
       'customer_number',
       'customer_company',
       'product_name',
+      'documents_url',
       'status',
       'sales_order_number',
       'custom_rug_sku',

@@ -7,6 +7,7 @@ export interface Quote {
   customer_number: string
   customer_company: string
   product_name: string | null
+  documents_url: string | null
   cad_file_url: string | null
   image_render_url: string | null
   cad_requested: boolean
@@ -42,6 +43,7 @@ export interface QuoteInsert {
   customer_number: string
   customer_company: string
   product_name?: string | null
+  documents_url?: string | null
   cad_file_url?: string | null
   image_render_url?: string | null
   cad_requested?: boolean
@@ -58,6 +60,7 @@ export interface QuoteUpdate {
   customer_number?: string
   customer_company?: string
   product_name?: string | null
+  documents_url?: string | null
   cad_file_url?: string | null
   image_render_url?: string | null
   cad_requested?: boolean
