@@ -1,15 +1,22 @@
 import { redirect, notFound } from 'next/navigation'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { QuoteForm, QuoteFormData } from '@/components/QuoteForm'
-import { Quote, ActivityLogInsert } from '@/lib/types'
+import { Quote, ActivityLogInsert, QuoteNoteInsert } from '@/lib/types'
 
 interface PageProps {
   params: Promise<{ id: string }>
 }
 
-async function updateQuote(id: string, data: QuoteFormData) {
+async function updateQuote(id: string, data: QuoteFormData, userEmail: string) {
   'use server'
   const supabase = await createServiceClient()
+
+  // Fetch current quote to detect URL changes
+  const { data: currentQuote } = await supabase
+    .from('quotes')
+    .select('quote_number, cad_file_url, image_render_url, documents_url, status')
+    .eq('id', id)
+    .single()
 
   const { error } = await supabase
     .from('quotes')
@@ -18,6 +25,122 @@ async function updateQuote(id: string, data: QuoteFormData) {
 
   if (error) {
     throw new Error(error.message)
+  }
+
+  if (!currentQuote) return
+
+  const notesToAdd: QuoteNoteInsert[] = []
+  const logsToAdd: ActivityLogInsert[] = []
+
+  // Check for CAD file URL changes
+  if (data.cad_file_url && !currentQuote.cad_file_url) {
+    notesToAdd.push({
+      quote_id: id,
+      content: 'CAD file added',
+      created_by: userEmail,
+    })
+    logsToAdd.push({
+      action_type: 'quote_updated',
+      quote_id: id,
+      quote_number: currentQuote.quote_number,
+      performed_by: userEmail,
+      details: 'CAD file added',
+    })
+  } else if (data.cad_file_url && currentQuote.cad_file_url && data.cad_file_url !== currentQuote.cad_file_url) {
+    notesToAdd.push({
+      quote_id: id,
+      content: 'CAD file updated',
+      created_by: userEmail,
+    })
+    logsToAdd.push({
+      action_type: 'quote_updated',
+      quote_id: id,
+      quote_number: currentQuote.quote_number,
+      performed_by: userEmail,
+      details: 'CAD file updated',
+    })
+  }
+
+  // Check for Image Render URL changes
+  if (data.image_render_url && !currentQuote.image_render_url) {
+    notesToAdd.push({
+      quote_id: id,
+      content: 'Image added',
+      created_by: userEmail,
+    })
+    logsToAdd.push({
+      action_type: 'quote_updated',
+      quote_id: id,
+      quote_number: currentQuote.quote_number,
+      performed_by: userEmail,
+      details: 'Image added',
+    })
+  } else if (data.image_render_url && currentQuote.image_render_url && data.image_render_url !== currentQuote.image_render_url) {
+    notesToAdd.push({
+      quote_id: id,
+      content: 'Image updated',
+      created_by: userEmail,
+    })
+    logsToAdd.push({
+      action_type: 'quote_updated',
+      quote_id: id,
+      quote_number: currentQuote.quote_number,
+      performed_by: userEmail,
+      details: 'Image updated',
+    })
+  }
+
+  // Check for Documents URL changes
+  if (data.documents_url && !currentQuote.documents_url) {
+    notesToAdd.push({
+      quote_id: id,
+      content: 'Documents added',
+      created_by: userEmail,
+    })
+    logsToAdd.push({
+      action_type: 'quote_updated',
+      quote_id: id,
+      quote_number: currentQuote.quote_number,
+      performed_by: userEmail,
+      details: 'Documents added',
+    })
+  } else if (data.documents_url && currentQuote.documents_url && data.documents_url !== currentQuote.documents_url) {
+    notesToAdd.push({
+      quote_id: id,
+      content: 'Documents updated',
+      created_by: userEmail,
+    })
+    logsToAdd.push({
+      action_type: 'quote_updated',
+      quote_id: id,
+      quote_number: currentQuote.quote_number,
+      performed_by: userEmail,
+      details: 'Documents updated',
+    })
+  }
+
+  // Check for status changes
+  if (data.status && currentQuote.status && data.status !== currentQuote.status) {
+    notesToAdd.push({
+      quote_id: id,
+      content: `Status changed from "${currentQuote.status}" to "${data.status}" by ${userEmail}`,
+      created_by: userEmail,
+    })
+    logsToAdd.push({
+      action_type: 'status_changed',
+      quote_id: id,
+      quote_number: currentQuote.quote_number,
+      performed_by: userEmail,
+      details: `Status changed from "${currentQuote.status}" to "${data.status}"`,
+    })
+  }
+
+  // Insert notes and logs
+  if (notesToAdd.length > 0) {
+    await supabase.from('quote_notes').insert(notesToAdd)
+  }
+  if (logsToAdd.length > 0) {
+    await supabase.from('activity_logs').insert(logsToAdd)
   }
 }
 
@@ -75,7 +198,7 @@ export default async function EditQuotePage({ params }: PageProps) {
 
   const handleSubmit = async (data: QuoteFormData) => {
     'use server'
-    await updateQuote(id, data)
+    await updateQuote(id, data, user.email || 'Admin')
   }
 
   const handleDelete = async () => {
