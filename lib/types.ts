@@ -37,6 +37,32 @@ export interface QuoteNoteInsert {
   created_by: string
 }
 
+export type ActivityActionType =
+  | 'quote_created'
+  | 'quote_updated'
+  | 'quote_deleted'
+  | 'status_changed'
+  | 'cad_approved'
+  | 'swatch_approved'
+
+export interface ActivityLog {
+  id: string
+  action_type: ActivityActionType
+  quote_id: string | null
+  quote_number: string | null
+  performed_by: string
+  details: string | null
+  created_at: string
+}
+
+export interface ActivityLogInsert {
+  action_type: ActivityActionType
+  quote_id?: string | null
+  quote_number?: string | null
+  performed_by: string
+  details?: string | null
+}
+
 export interface QuoteInsert {
   quote_number?: string
   customer_name: string
@@ -83,6 +109,11 @@ export type Database = {
       quote_notes: {
         Row: QuoteNote
         Insert: QuoteNoteInsert
+        Update: never
+      }
+      activity_logs: {
+        Row: ActivityLog
+        Insert: ActivityLogInsert
         Update: never
       }
       quote_number_sequence: {

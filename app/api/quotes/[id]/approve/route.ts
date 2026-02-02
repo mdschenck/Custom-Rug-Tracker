@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/server'
+import { ActivityLogInsert, ActivityActionType } from '@/lib/types'
 
 interface RouteParams {
   params: Promise<{ id: string }>
@@ -86,6 +87,17 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         content: noteContent,
         created_by: approverName,
       })
+
+    // Log the activity
+    const actionType: ActivityActionType = type === 'cad' ? 'cad_approved' : 'swatch_approved'
+    const activityLog: ActivityLogInsert = {
+      action_type: actionType,
+      quote_id: id,
+      quote_number: quote.quote_number,
+      performed_by: approverName,
+      details: noteContent,
+    }
+    await supabase.from('activity_logs').insert(activityLog)
 
     return NextResponse.json(data)
   } catch (error) {

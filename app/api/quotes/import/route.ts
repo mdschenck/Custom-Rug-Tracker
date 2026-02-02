@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
-import { QuoteInsert } from '@/lib/types'
+import { QuoteInsert, ActivityLogInsert } from '@/lib/types'
 import { QUOTE_STATUSES, QuoteStatus } from '@/lib/constants'
 
 interface ImportRow {
@@ -94,6 +94,16 @@ export async function POST(request: NextRequest) {
         { status: 500 }
       )
     }
+
+    // Log the bulk import activity
+    const activityLogs: ActivityLogInsert[] = data.map((quote) => ({
+      action_type: 'quote_created' as const,
+      quote_id: quote.id,
+      quote_number: quote.quote_number,
+      performed_by: user.email || 'Admin',
+      details: `Imported via CSV: ${quote.customer_name} (${quote.customer_company})`,
+    }))
+    await serviceSupabase.from('activity_logs').insert(activityLogs)
 
     return NextResponse.json({
       imported: data.length,

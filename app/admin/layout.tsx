@@ -35,7 +35,13 @@ export default async function AdminLayout({
               </Link>
             </div>
             {user && (
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-6">
+                <Link
+                  href="/admin/activity-log"
+                  className="text-sm text-gray-300 hover:text-white transition-colors"
+                >
+                  Activity Log
+                </Link>
                 <span className="text-sm text-gray-300">{user.email}</span>
                 <form action={signOut}>
                   <button
