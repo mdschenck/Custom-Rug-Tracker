@@ -11,6 +11,7 @@ export interface QuoteFormData {
   customer_number: string
   customer_company: string
   product_name: string | null
+  documents_url: string | null
   cad_file_url: string | null
   image_render_url: string | null
   cad_requested: boolean
@@ -42,6 +43,7 @@ export function QuoteForm({ quote, onSubmit, onDelete, adminEmail }: QuoteFormPr
     customer_number: quote?.customer_number || '',
     customer_company: quote?.customer_company || '',
     product_name: quote?.product_name || '',
+    documents_url: quote?.documents_url || '',
     cad_file_url: quote?.cad_file_url || '',
     image_render_url: quote?.image_render_url || '',
     cad_requested: quote?.cad_requested || false,
@@ -105,6 +107,24 @@ export function QuoteForm({ quote, onSubmit, onDelete, adminEmail }: QuoteFormPr
 
     if (type === 'checkbox') {
       setFormData((prev) => ({ ...prev, [name]: checked }))
+    } else if (name === 'status') {
+      // When status changes to a pending state, reset the corresponding approval flags
+      setFormData((prev) => {
+        const updates: Partial<typeof prev> = { status: value as QuoteStatus }
+
+        // Reset swatch approval when going back to Swatch Approval Pending
+        if (value === 'Swatch Approval Pending') {
+          updates.swatch_approved = false
+          updates.swatch_approved_by = ''
+        }
+
+        // Reset CAD approval when going back to CAD Approval Pending
+        if (value === 'CAD Approval Pending') {
+          updates.cad_approved = false
+        }
+
+        return { ...prev, ...updates }
+      })
     } else {
       setFormData((prev) => ({ ...prev, [name]: value }))
     }
@@ -117,10 +137,14 @@ export function QuoteForm({ quote, onSubmit, onDelete, adminEmail }: QuoteFormPr
 
     try {
       // Determine swatch_approved_by value
-      let swatchApprovedBy = formData.swatch_approved_by || null
+      let swatchApprovedBy: string | null = formData.swatch_approved_by || null
       // If swatch is being approved and no approver set, use admin email
       if (formData.swatch_approved && !quote?.swatch_approved && !swatchApprovedBy && adminEmail) {
         swatchApprovedBy = adminEmail
+      }
+      // If swatch is being unapproved, clear the approver
+      if (!formData.swatch_approved) {
+        swatchApprovedBy = null
       }
 
       const data: QuoteFormData = {
@@ -128,6 +152,7 @@ export function QuoteForm({ quote, onSubmit, onDelete, adminEmail }: QuoteFormPr
         customer_number: formData.customer_number,
         customer_company: formData.customer_company,
         product_name: formData.product_name || null,
+        documents_url: formData.documents_url || null,
         cad_file_url: formData.cad_file_url || null,
         image_render_url: formData.image_render_url || null,
         cad_requested: formData.cad_requested,
@@ -185,22 +210,48 @@ export function QuoteForm({ quote, onSubmit, onDelete, adminEmail }: QuoteFormPr
   }))
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-4">
       {error && (
-        <div className="p-4 bg-red-50 border border-red-200 rounded-md text-red-600 text-sm">
+        <div className="p-3 bg-red-50 border border-red-200 rounded-md text-red-600 text-sm">
           {error}
         </div>
       )}
 
-      {quote && (
-        <div className="p-4 bg-jl-offwhite rounded-md">
-          <p className="text-sm text-jl-muted">Quote Number</p>
-          <p className="text-lg font-medium text-jl-charcoal">{quote.quote_number}</p>
+      {/* Quote Number and Status Row */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        {quote && (
+          <div className="p-3 bg-jl-offwhite rounded-md">
+            <p className="text-xs text-jl-muted">Quote Number</p>
+            <p className="text-base font-medium text-jl-charcoal">{quote.quote_number}</p>
+          </div>
+        )}
+        <div className={quote ? 'md:col-span-1' : 'md:col-span-2'}>
+          <Select
+            label="Status"
+            name="status"
+            value={formData.status}
+            onChange={handleChange}
+            options={statusOptions}
+          />
         </div>
-      )}
+        <Input
+          label="Sales Order #"
+          name="sales_order_number"
+          value={formData.sales_order_number}
+          onChange={handleChange}
+          placeholder="SO-123456"
+        />
+        <Input
+          label="Custom Rug SKU"
+          name="custom_rug_sku"
+          value={formData.custom_rug_sku}
+          onChange={handleChange}
+          placeholder="CRG-ABC123"
+        />
+      </div>
 
       {/* Customer Information */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Input
           label="Customer Name"
           name="customer_name"
@@ -209,7 +260,6 @@ export function QuoteForm({ quote, onSubmit, onDelete, adminEmail }: QuoteFormPr
           required
           placeholder="John Smith"
         />
-
         <Input
           label="Customer Number"
           name="customer_number"
@@ -218,7 +268,6 @@ export function QuoteForm({ quote, onSubmit, onDelete, adminEmail }: QuoteFormPr
           required
           placeholder="CUST001"
         />
-
         <Input
           label="Customer Company"
           name="customer_company"
@@ -226,14 +275,6 @@ export function QuoteForm({ quote, onSubmit, onDelete, adminEmail }: QuoteFormPr
           onChange={handleChange}
           required
           placeholder="Acme Interiors"
-        />
-
-        <Select
-          label="Status"
-          name="status"
-          value={formData.status}
-          onChange={handleChange}
-          options={statusOptions}
         />
       </div>
 
@@ -246,63 +287,8 @@ export function QuoteForm({ quote, onSubmit, onDelete, adminEmail }: QuoteFormPr
           onChange={handleChange}
           placeholder="Custom Wool Rug 8x10"
         />
-
         <Input
-          label="Custom Rug SKU"
-          name="custom_rug_sku"
-          value={formData.custom_rug_sku}
-          onChange={handleChange}
-          placeholder="CRG-ABC123"
-        />
-      </div>
-
-      {/* Notes Section (Admin Only) - Only show when editing */}
-      {quote && (
-        <div className="border border-jl-border rounded-md p-4 space-y-4">
-          <h3 className="text-sm font-medium text-jl-charcoal">Notes (Admin Only)</h3>
-
-          {/* Add Note */}
-          <div className="flex gap-2">
-            <textarea
-              value={newNote}
-              onChange={(e) => setNewNote(e.target.value)}
-              rows={2}
-              className="flex-1 px-3 py-2 border border-jl-border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-jl-charcoal focus:border-transparent"
-              placeholder="Add a note..."
-            />
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleAddNote}
-              disabled={addingNote || !newNote.trim()}
-              className="self-end"
-            >
-              {addingNote ? 'Adding...' : 'Add Note'}
-            </Button>
-          </div>
-
-          {/* Notes List */}
-          {notes.length > 0 ? (
-            <div className="space-y-3 max-h-64 overflow-y-auto">
-              {notes.map((note) => (
-                <div key={note.id} className="bg-jl-offwhite rounded-md p-3">
-                  <p className="text-sm text-jl-charcoal whitespace-pre-wrap">{note.content}</p>
-                  <p className="text-xs text-jl-muted mt-2">
-                    {note.created_by} &bull; {formatNoteDate(note.created_at)}
-                  </p>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-sm text-jl-muted">No notes yet.</p>
-          )}
-        </div>
-      )}
-
-      {/* Image Render URL - Always visible */}
-      <div>
-        <Input
-          label="Image Render URL (Product Image)"
+          label="Image Render URL"
           name="image_render_url"
           value={formData.image_render_url}
           onChange={handleChange}
@@ -311,101 +297,106 @@ export function QuoteForm({ quote, onSubmit, onDelete, adminEmail }: QuoteFormPr
         />
       </div>
 
-      {/* CAD Section */}
-      <div className="border border-jl-border rounded-md p-4 space-y-4">
-        <div className="flex items-center gap-3">
-          <input
-            type="checkbox"
-            id="cad_requested"
-            name="cad_requested"
-            checked={formData.cad_requested}
-            onChange={handleChange}
-            className="h-4 w-4 rounded border-jl-border text-jl-charcoal focus:ring-jl-charcoal"
-          />
-          <label htmlFor="cad_requested" className="text-sm font-medium text-jl-charcoal">
-            CAD Requested
-          </label>
-        </div>
-
-        {formData.cad_requested && (
-          <div className="space-y-4 pl-7">
-            <Input
-              label="CAD File URL"
-              name="cad_file_url"
-              value={formData.cad_file_url}
-              onChange={handleChange}
-              placeholder="https://..."
-              type="url"
-            />
-
-            <div className="flex items-center gap-3">
-              <input
-                type="checkbox"
-                id="cad_approved"
-                name="cad_approved"
-                checked={formData.cad_approved}
-                onChange={handleChange}
-                className="h-4 w-4 rounded border-jl-border text-jl-charcoal focus:ring-jl-charcoal"
-              />
-              <label htmlFor="cad_approved" className="text-sm font-medium text-jl-charcoal">
-                CAD Approved
-              </label>
-              {quote?.cad_approved_at && (
-                <span className="text-xs text-jl-muted">
-                  (Approved: {new Date(quote.cad_approved_at).toLocaleDateString()})
-                </span>
-              )}
-            </div>
-          </div>
-        )}
+      {/* URLs Row */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Input
+          label="Documents URL"
+          name="documents_url"
+          value={formData.documents_url}
+          onChange={handleChange}
+          placeholder="https://..."
+          type="url"
+        />
+        <div></div>
       </div>
 
-      {/* Swatch Approval Section */}
-      <div className="border border-jl-border rounded-md p-4 space-y-4">
-        <div className="flex items-center gap-3">
-          <input
-            type="checkbox"
-            id="swatch_approved"
-            name="swatch_approved"
-            checked={formData.swatch_approved}
-            onChange={handleChange}
-            className="h-4 w-4 rounded border-jl-border text-jl-charcoal focus:ring-jl-charcoal"
-          />
-          <label htmlFor="swatch_approved" className="text-sm font-medium text-jl-charcoal">
-            Swatch Approved
-          </label>
-          {quote?.swatch_approved_at && (
-            <span className="text-xs text-jl-muted">
-              (Approved: {new Date(quote.swatch_approved_at).toLocaleDateString()})
-            </span>
+      {/* CAD and Swatch Sections Side by Side */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* CAD Section */}
+        <div className="border border-jl-border rounded-md p-3 space-y-3">
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              id="cad_requested"
+              name="cad_requested"
+              checked={formData.cad_requested}
+              onChange={handleChange}
+              className="h-4 w-4 rounded border-jl-border text-jl-charcoal focus:ring-jl-charcoal"
+            />
+            <label htmlFor="cad_requested" className="text-sm font-medium text-jl-charcoal">
+              CAD Requested
+            </label>
+          </div>
+
+          {formData.cad_requested && (
+            <div className="space-y-3 pl-6">
+              <Input
+                label="CAD File URL"
+                name="cad_file_url"
+                value={formData.cad_file_url}
+                onChange={handleChange}
+                placeholder="https://..."
+                type="url"
+              />
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="cad_approved"
+                  name="cad_approved"
+                  checked={formData.cad_approved}
+                  onChange={handleChange}
+                  className="h-4 w-4 rounded border-jl-border text-jl-charcoal focus:ring-jl-charcoal"
+                />
+                <label htmlFor="cad_approved" className="text-sm font-medium text-jl-charcoal">
+                  CAD Approved
+                </label>
+                {quote?.cad_approved_at && (
+                  <span className="text-xs text-jl-muted">
+                    ({new Date(quote.cad_approved_at).toLocaleDateString()})
+                  </span>
+                )}
+              </div>
+            </div>
           )}
         </div>
 
-        {formData.swatch_approved && (
-          <div className="pl-7">
-            <Input
-              label="Approved By"
-              name="swatch_approved_by"
-              value={formData.swatch_approved_by}
+        {/* Swatch Approval Section */}
+        <div className="border border-jl-border rounded-md p-3 space-y-3">
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              id="swatch_approved"
+              name="swatch_approved"
+              checked={formData.swatch_approved}
               onChange={handleChange}
-              placeholder={adminEmail || "Approver's name or email"}
+              className="h-4 w-4 rounded border-jl-border text-jl-charcoal focus:ring-jl-charcoal"
             />
+            <label htmlFor="swatch_approved" className="text-sm font-medium text-jl-charcoal">
+              Swatch Approved
+            </label>
+            {quote?.swatch_approved_at && (
+              <span className="text-xs text-jl-muted">
+                ({new Date(quote.swatch_approved_at).toLocaleDateString()})
+              </span>
+            )}
           </div>
-        )}
+
+          {formData.swatch_approved && (
+            <div className="pl-6">
+              <Input
+                label="Approved By"
+                name="swatch_approved_by"
+                value={formData.swatch_approved_by}
+                onChange={handleChange}
+                placeholder={adminEmail || "Approver's name or email"}
+              />
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* Sales Information */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Input
-          label="Sales Order Number"
-          name="sales_order_number"
-          value={formData.sales_order_number}
-          onChange={handleChange}
-          placeholder="SO-123456"
-        />
-      </div>
-
-      <div className="flex items-center justify-between pt-4 border-t border-jl-border">
+      {/* Action Buttons */}
+      <div className="flex items-center justify-between pt-3 border-t border-jl-border">
         <div>
           {quote && onDelete && (
             <Button
@@ -433,6 +424,58 @@ export function QuoteForm({ quote, onSubmit, onDelete, adminEmail }: QuoteFormPr
           </Button>
         </div>
       </div>
+
+      {/* Notes Section - At Bottom */}
+      {quote && (
+        <div className="border-t border-jl-border pt-4 mt-4">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-sm font-medium text-jl-charcoal">Activity Log</h3>
+          </div>
+
+          {/* Add Note */}
+          <div className="flex gap-2 mb-3">
+            <input
+              type="text"
+              value={newNote}
+              onChange={(e) => setNewNote(e.target.value)}
+              className="flex-1 px-3 py-1.5 border border-jl-border rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-jl-charcoal focus:border-transparent"
+              placeholder="Add a note..."
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault()
+                  handleAddNote()
+                }
+              }}
+            />
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleAddNote}
+              disabled={addingNote || !newNote.trim()}
+              className="text-sm px-3 py-1"
+            >
+              {addingNote ? 'Adding...' : 'Add'}
+            </Button>
+          </div>
+
+          {/* Notes List - Compact */}
+          {notes.length > 0 ? (
+            <div className="space-y-1 max-h-48 overflow-y-auto">
+              {notes.map((note) => (
+                <div key={note.id} className="text-xs text-jl-charcoal py-1 border-b border-gray-100 last:border-0">
+                  <span className="text-jl-muted">{formatNoteDate(note.created_at)}</span>
+                  <span className="mx-1.5 text-jl-muted">|</span>
+                  <span className="font-medium">{note.created_by}</span>
+                  <span className="mx-1.5 text-jl-muted">-</span>
+                  <span>{note.content}</span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-xs text-jl-muted">No activity yet.</p>
+          )}
+        </div>
+      )}
     </form>
   )
 }
