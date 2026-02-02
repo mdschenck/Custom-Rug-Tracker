@@ -1,12 +1,19 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { Quote } from '@/lib/types'
 import { StatusBadge } from '@/components/StatusBadge'
 import { QUOTE_STATUSES } from '@/lib/constants'
 import { ApprovalModal } from '@/components/ApprovalModal'
+
+// Format date consistently to avoid hydration mismatch
+function formatDate(dateString: string): string {
+  const date = new Date(dateString)
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+  return `${months[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()}`
+}
 
 interface CustomerQuotesTableProps {
   quotes: Quote[]
@@ -140,6 +147,7 @@ export function CustomerQuotesTable({ quotes, customerName }: CustomerQuotesTabl
               <th className="px-4 py-3 text-left text-sm font-normal text-[#393939]">SKU</th>
               <th className="px-4 py-3 text-left text-sm font-normal text-[#393939]">Sales Order</th>
               <th className="px-4 py-3 text-left text-sm font-normal text-[#393939]">CAD</th>
+              <th className="px-4 py-3 text-left text-sm font-normal text-[#393939]">Documents</th>
               <th className="px-4 py-3 text-left text-sm font-normal text-[#393939]">Date</th>
             </tr>
           </thead>
@@ -194,19 +202,29 @@ export function CustomerQuotesTable({ quotes, customerName }: CustomerQuotesTabl
                       <span className="text-gray-500">-</span>
                     )}
                   </td>
+                  <td className="px-4 py-3 text-sm">
+                    {quote.documents_url ? (
+                      <a
+                        href={quote.documents_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 hover:underline"
+                      >
+                        Documents
+                      </a>
+                    ) : (
+                      <span className="text-gray-500">-</span>
+                    )}
+                  </td>
                   <td className="px-4 py-3 text-sm text-[#393939]">
-                    {new Date(quote.created_at).toLocaleDateString('en-US', {
-                      year: 'numeric',
-                      month: 'short',
-                      day: 'numeric',
-                    })}
+                    {formatDate(quote.created_at)}
                   </td>
                 </tr>
 
                 {/* Approval Alert Row (if needed) */}
                 {needsApproval(quote.status) && (
                   <tr>
-                    <td colSpan={8} className="p-0">
+                    <td colSpan={9} className="p-0">
                       <ApprovalAlert quote={quote} onReviewClick={() => handleReviewClick(quote)} />
                     </td>
                   </tr>
@@ -214,7 +232,7 @@ export function CustomerQuotesTable({ quotes, customerName }: CustomerQuotesTabl
 
                 {/* Progress Bar Row */}
                 <tr className="border-b border-[#393939]">
-                  <td colSpan={8} className="pb-2">
+                  <td colSpan={9} className="pb-2">
                     <ProgressBar currentStatus={quote.status} />
                   </td>
                 </tr>

@@ -1,7 +1,7 @@
 import { redirect, notFound } from 'next/navigation'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { QuoteForm, QuoteFormData } from '@/components/QuoteForm'
-import { Quote } from '@/lib/types'
+import { Quote, ActivityLogInsert } from '@/lib/types'
 
 interface PageProps {
   params: Promise<{ id: string }>
@@ -21,9 +21,16 @@ async function updateQuote(id: string, data: QuoteFormData) {
   }
 }
 
-async function deleteQuote(id: string) {
+async function deleteQuote(id: string, userEmail: string) {
   'use server'
   const supabase = await createServiceClient()
+
+  // Get quote info before deleting for logging
+  const { data: quote } = await supabase
+    .from('quotes')
+    .select('quote_number, customer_name')
+    .eq('id', id)
+    .single()
 
   const { error } = await supabase
     .from('quotes')
@@ -33,6 +40,16 @@ async function deleteQuote(id: string) {
   if (error) {
     throw new Error(error.message)
   }
+
+  // Log the deletion
+  const deleteLog: ActivityLogInsert = {
+    action_type: 'quote_deleted',
+    quote_id: null,
+    quote_number: quote?.quote_number || null,
+    performed_by: userEmail,
+    details: quote ? `Deleted quote ${quote.quote_number} for ${quote.customer_name}` : `Deleted quote ${id}`,
+  }
+  await supabase.from('activity_logs').insert(deleteLog)
 }
 
 export default async function EditQuotePage({ params }: PageProps) {
@@ -63,16 +80,16 @@ export default async function EditQuotePage({ params }: PageProps) {
 
   const handleDelete = async () => {
     'use server'
-    await deleteQuote(id)
+    await deleteQuote(id, user.email || 'Admin')
   }
 
   return (
-    <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <h1 className="text-2xl font-semibold text-jl-charcoal mb-6">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <h1 className="text-2xl font-semibold text-jl-charcoal mb-4">
         Edit Quote
       </h1>
 
-      <div className="bg-white rounded-lg shadow-sm border border-jl-border p-6">
+      <div className="bg-white rounded-lg shadow-sm border border-jl-border p-4">
         <QuoteForm
           quote={quote as Quote}
           onSubmit={handleSubmit}
