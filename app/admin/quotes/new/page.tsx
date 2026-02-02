@@ -23,12 +23,12 @@ export default async function NewQuotePage() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <h1 className="text-2xl font-semibold text-jl-charcoal mb-6">
+    <div className="mx-auto px-4 sm:px-6 lg:px-8 py-6" style={{ maxWidth: '1200px' }}>
+      <h1 className="text-2xl font-semibold text-jl-charcoal mb-4">
         Create New Quote
       </h1>
 
-      <div className="bg-white rounded-lg shadow-sm border border-jl-border p-6">
+      <div className="bg-white rounded-lg shadow-sm border border-jl-border p-4">
         <QuoteForm onSubmit={createQuote} adminEmail={user.email} />
       </div>
     </div>
