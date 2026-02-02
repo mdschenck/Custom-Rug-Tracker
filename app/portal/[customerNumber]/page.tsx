@@ -35,7 +35,10 @@ export default async function CustomerQuotesPage({ params }: PageProps) {
         </div>
 
         {quotes && quotes.length > 0 ? (
-          <CustomerQuotesTable quotes={quotes as Quote[]} />
+          <CustomerQuotesTable
+            quotes={quotes as Quote[]}
+            customerName={quotes[0]?.customer_name}
+          />
         ) : (
           <div className="p-12 text-center">
             <p className="text-gray-600">
