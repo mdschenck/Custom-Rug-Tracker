@@ -11,10 +11,10 @@ async function updateQuote(id: string, data: QuoteFormData, userEmail: string) {
   'use server'
   const supabase = await createServiceClient()
 
-  // Fetch current quote to detect URL changes
+  // Fetch current quote to detect changes
   const { data: currentQuote } = await supabase
     .from('quotes')
-    .select('quote_number, cad_file_url, image_render_url, documents_url, status')
+    .select('*')
     .eq('id', id)
     .single()
 
@@ -32,95 +32,11 @@ async function updateQuote(id: string, data: QuoteFormData, userEmail: string) {
   const notesToAdd: QuoteNoteInsert[] = []
   const logsToAdd: ActivityLogInsert[] = []
 
-  // Check for CAD file URL changes
-  if (data.cad_file_url && !currentQuote.cad_file_url) {
-    notesToAdd.push({
-      quote_id: id,
-      content: 'CAD file added',
-      created_by: userEmail,
-    })
-    logsToAdd.push({
-      action_type: 'quote_updated',
-      quote_id: id,
-      quote_number: currentQuote.quote_number,
-      performed_by: userEmail,
-      details: 'CAD file added',
-    })
-  } else if (data.cad_file_url && currentQuote.cad_file_url && data.cad_file_url !== currentQuote.cad_file_url) {
-    notesToAdd.push({
-      quote_id: id,
-      content: 'CAD file updated',
-      created_by: userEmail,
-    })
-    logsToAdd.push({
-      action_type: 'quote_updated',
-      quote_id: id,
-      quote_number: currentQuote.quote_number,
-      performed_by: userEmail,
-      details: 'CAD file updated',
-    })
-  }
-
-  // Check for Image Render URL changes
-  if (data.image_render_url && !currentQuote.image_render_url) {
-    notesToAdd.push({
-      quote_id: id,
-      content: 'Image added',
-      created_by: userEmail,
-    })
-    logsToAdd.push({
-      action_type: 'quote_updated',
-      quote_id: id,
-      quote_number: currentQuote.quote_number,
-      performed_by: userEmail,
-      details: 'Image added',
-    })
-  } else if (data.image_render_url && currentQuote.image_render_url && data.image_render_url !== currentQuote.image_render_url) {
-    notesToAdd.push({
-      quote_id: id,
-      content: 'Image updated',
-      created_by: userEmail,
-    })
-    logsToAdd.push({
-      action_type: 'quote_updated',
-      quote_id: id,
-      quote_number: currentQuote.quote_number,
-      performed_by: userEmail,
-      details: 'Image updated',
-    })
-  }
-
-  // Check for Documents URL changes
-  if (data.documents_url && !currentQuote.documents_url) {
-    notesToAdd.push({
-      quote_id: id,
-      content: 'Documents added',
-      created_by: userEmail,
-    })
-    logsToAdd.push({
-      action_type: 'quote_updated',
-      quote_id: id,
-      quote_number: currentQuote.quote_number,
-      performed_by: userEmail,
-      details: 'Documents added',
-    })
-  } else if (data.documents_url && currentQuote.documents_url && data.documents_url !== currentQuote.documents_url) {
-    notesToAdd.push({
-      quote_id: id,
-      content: 'Documents updated',
-      created_by: userEmail,
-    })
-    logsToAdd.push({
-      action_type: 'quote_updated',
-      quote_id: id,
-      quote_number: currentQuote.quote_number,
-      performed_by: userEmail,
-      details: 'Documents updated',
-    })
-  }
+  // Track all field changes for the general update log
+  const changedFields: string[] = []
 
   // Check for status changes
-  if (data.status && currentQuote.status && data.status !== currentQuote.status) {
+  if (data.status && data.status !== currentQuote.status) {
     notesToAdd.push({
       quote_id: id,
       content: `Status changed from "${currentQuote.status}" to "${data.status}" by ${userEmail}`,
@@ -135,12 +51,61 @@ async function updateQuote(id: string, data: QuoteFormData, userEmail: string) {
     })
   }
 
+  // Check for CAD file URL changes
+  if ((data.cad_file_url || null) !== (currentQuote.cad_file_url || null)) {
+    const label = !currentQuote.cad_file_url ? 'CAD file added' : !data.cad_file_url ? 'CAD file removed' : 'CAD file updated'
+    changedFields.push(label)
+  }
+
+  // Check for Image Render URL changes
+  if ((data.image_render_url || null) !== (currentQuote.image_render_url || null)) {
+    const label = !currentQuote.image_render_url ? 'Image added' : !data.image_render_url ? 'Image removed' : 'Image updated'
+    changedFields.push(label)
+  }
+
+  // Check for Documents URL changes
+  if ((data.documents_url || null) !== (currentQuote.documents_url || null)) {
+    const label = !currentQuote.documents_url ? 'Documents added' : !data.documents_url ? 'Documents removed' : 'Documents updated'
+    changedFields.push(label)
+  }
+
+  // Check for other field changes
+  if (data.customer_name !== currentQuote.customer_name) changedFields.push('customer name')
+  if (data.customer_number !== currentQuote.customer_number) changedFields.push('customer number')
+  if (data.customer_company !== currentQuote.customer_company) changedFields.push('customer company')
+  if ((data.product_name || null) !== (currentQuote.product_name || null)) changedFields.push('product name')
+  if ((data.sales_order_number || null) !== (currentQuote.sales_order_number || null)) changedFields.push('sales order number')
+  if ((data.custom_rug_sku || null) !== (currentQuote.custom_rug_sku || null)) changedFields.push('custom rug SKU')
+  if (data.cad_requested !== currentQuote.cad_requested) changedFields.push(data.cad_requested ? 'CAD requested' : 'CAD request removed')
+  if (data.cad_approved !== currentQuote.cad_approved) changedFields.push(data.cad_approved ? 'CAD approved' : 'CAD approval removed')
+  if (data.swatch_approved !== currentQuote.swatch_approved) changedFields.push(data.swatch_approved ? 'swatch approved' : 'swatch approval removed')
+  if ((data.swatch_approved_by || null) !== (currentQuote.swatch_approved_by || null)) changedFields.push('swatch approver')
+
+  // Create a general update log if any non-status fields changed
+  if (changedFields.length > 0) {
+    const details = `Updated: ${changedFields.join(', ')}`
+    notesToAdd.push({
+      quote_id: id,
+      content: details,
+      created_by: userEmail,
+    })
+    logsToAdd.push({
+      action_type: 'quote_updated',
+      quote_id: id,
+      quote_number: currentQuote.quote_number,
+      performed_by: userEmail,
+      details,
+    })
+  }
+
   // Insert notes and logs
   if (notesToAdd.length > 0) {
-    await supabase.from('quote_notes').insert(notesToAdd)
+    const noteResult = await supabase.from('quote_notes').insert(notesToAdd)
+    if (noteResult.error) console.error('Failed to insert notes:', noteResult.error)
   }
   if (logsToAdd.length > 0) {
-    await supabase.from('activity_logs').insert(logsToAdd)
+    const logResult = await supabase.from('activity_logs').insert(logsToAdd)
+    if (logResult.error) console.error('Failed to insert activity logs:', logResult.error)
   }
 }
 
@@ -172,7 +137,8 @@ async function deleteQuote(id: string, userEmail: string) {
     performed_by: userEmail,
     details: quote ? `Deleted quote ${quote.quote_number} for ${quote.customer_name}` : `Deleted quote ${id}`,
   }
-  await supabase.from('activity_logs').insert(deleteLog)
+  const logResult = await supabase.from('activity_logs').insert(deleteLog)
+  if (logResult.error) console.error('Failed to insert deletion log:', logResult.error)
 }
 
 export default async function EditQuotePage({ params }: PageProps) {
