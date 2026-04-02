@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
-import { QuoteInsert } from '@/lib/types'
+import { QuoteInsert, ActivityLogInsert } from '@/lib/types'
 
 // GET /api/quotes - List all quotes or filter by customer_number
 export async function GET(request: NextRequest) {
@@ -74,6 +74,16 @@ export async function POST(request: NextRequest) {
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
+
+    // Log the activity
+    const activityLog: ActivityLogInsert = {
+      action_type: 'quote_created',
+      quote_id: data.id,
+      quote_number: data.quote_number,
+      performed_by: user.email || 'Admin',
+      details: `Created quote for ${data.customer_name} (${data.customer_company})`,
+    }
+    await supabase.from('activity_logs').insert(activityLog)
 
     return NextResponse.json(data, { status: 201 })
   } catch (error) {
