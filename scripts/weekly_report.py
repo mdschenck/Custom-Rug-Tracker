@@ -88,11 +88,11 @@ def build_report(quotes):
         "Swatch Ordered", "Swatch Creation", "Swatch Shipped", "Swatch Approval Pending",
         "Swatch Approved", "Order Created", "On Loom", "Finishing", "In Transit",
     ]
-    status_counts = {}
+    status_groups = {}
     for q in quotes:
-        status_counts[q["status"]] = status_counts.get(q["status"], 0) + 1
+        status_groups.setdefault(q["status"], []).append(q)
 
-    status_summary = [(s, status_counts[s]) for s in status_order if s in status_counts]
+    status_summary = [(s, status_groups[s]) for s in status_order if s in status_groups]
 
     return new_and_inquiry, approval_pending, status_summary
 
@@ -156,11 +156,12 @@ def build_html(new_and_inquiry, approval_pending, status_summary, total_open):
         rows_html = ""
         for q in approval_pending:
             approval_type = "CAD" if q["status"] == "CAD Approval Pending" else "Swatch"
+            product = q.get("product_name") or "-"
             rows_html += f"""
             <tr>
               <td style="padding:8px 12px;border-bottom:1px solid {COLOR_BORDER};">{q["quote_number"]}</td>
               <td style="padding:8px 12px;border-bottom:1px solid {COLOR_BORDER};">{q["customer_name"]}</td>
-              <td style="padding:8px 12px;border-bottom:1px solid {COLOR_BORDER};">{q["customer_company"]}</td>
+              <td style="padding:8px 12px;border-bottom:1px solid {COLOR_BORDER};">{product}</td>
               <td style="padding:8px 12px;border-bottom:1px solid {COLOR_BORDER};">{approval_type}</td>
               <td style="padding:8px 12px;border-bottom:1px solid {COLOR_BORDER};">{format_date(q["updated_at"])}</td>
             </tr>"""
@@ -173,7 +174,7 @@ def build_html(new_and_inquiry, approval_pending, status_summary, total_open):
             <tr style="background:{COLOR_BG};">
               <th style="padding:8px 12px;text-align:left;border-bottom:2px solid {COLOR_BORDER};">Quote #</th>
               <th style="padding:8px 12px;text-align:left;border-bottom:2px solid {COLOR_BORDER};">Customer</th>
-              <th style="padding:8px 12px;text-align:left;border-bottom:2px solid {COLOR_BORDER};">Company</th>
+              <th style="padding:8px 12px;text-align:left;border-bottom:2px solid {COLOR_BORDER};">Product</th>
               <th style="padding:8px 12px;text-align:left;border-bottom:2px solid {COLOR_BORDER};">Approval Type</th>
               <th style="padding:8px 12px;text-align:left;border-bottom:2px solid {COLOR_BORDER};">Last Updated</th>
             </tr>
@@ -187,27 +188,39 @@ def build_html(new_and_inquiry, approval_pending, status_summary, total_open):
         <p style="color:{COLOR_MUTED};font-size:14px;">No quotes pending approval this week.</p>"""
 
     # --- Section 3: Open Quotes Summary ---
-    rows_html = ""
-    for status, count in status_summary:
-        rows_html += f"""
-            <tr>
-              <td style="padding:6px 12px;border-bottom:1px solid {COLOR_BORDER};">{status}</td>
-              <td style="padding:6px 12px;border-bottom:1px solid {COLOR_BORDER};text-align:center;">{count}</td>
-            </tr>"""
+    groups_html = ""
+    for status, quotes_in_status in status_summary:
+        rows_html = ""
+        for q in quotes_in_status:
+            product = q.get("product_name") or "-"
+            rows_html += f"""
+              <tr>
+                <td style="padding:6px 12px;border-bottom:1px solid {COLOR_BORDER};">{q["quote_number"]}</td>
+                <td style="padding:6px 12px;border-bottom:1px solid {COLOR_BORDER};">{q["customer_name"]}</td>
+                <td style="padding:6px 12px;border-bottom:1px solid {COLOR_BORDER};">{product}</td>
+                <td style="padding:6px 12px;border-bottom:1px solid {COLOR_BORDER};">{format_date(q["updated_at"])}</td>
+              </tr>"""
 
-    section3 = f"""
-        <h2 style="color:{COLOR_PRIMARY};font-size:18px;margin:32px 0 12px;">Open Quotes Summary</h2>
-        <p style="color:{COLOR_MUTED};font-size:13px;margin:0 0 12px;">{total_open} open quote{"s" if total_open != 1 else ""} across all statuses.</p>
-        <table style="width:auto;border-collapse:collapse;font-size:14px;">
+        count = len(quotes_in_status)
+        groups_html += f"""
+        <h3 style="color:{COLOR_PRIMARY};font-size:15px;margin:20px 0 8px;">{status} ({count})</h3>
+        <table style="width:100%;border-collapse:collapse;font-size:14px;">
           <thead>
             <tr style="background:{COLOR_BG};">
-              <th style="padding:6px 12px;text-align:left;border-bottom:2px solid {COLOR_BORDER};">Status</th>
-              <th style="padding:6px 12px;text-align:center;border-bottom:2px solid {COLOR_BORDER};">Count</th>
+              <th style="padding:6px 12px;text-align:left;border-bottom:2px solid {COLOR_BORDER};">Quote #</th>
+              <th style="padding:6px 12px;text-align:left;border-bottom:2px solid {COLOR_BORDER};">Customer</th>
+              <th style="padding:6px 12px;text-align:left;border-bottom:2px solid {COLOR_BORDER};">Product</th>
+              <th style="padding:6px 12px;text-align:left;border-bottom:2px solid {COLOR_BORDER};">Last Updated</th>
             </tr>
           </thead>
           <tbody>{rows_html}
           </tbody>
         </table>"""
+
+    section3 = f"""
+        <h2 style="color:{COLOR_PRIMARY};font-size:18px;margin:32px 0 12px;">All Open Quotes by Status</h2>
+        <p style="color:{COLOR_MUTED};font-size:13px;margin:0 0 12px;">{total_open} open quote{"s" if total_open != 1 else ""} across all statuses.</p>
+        {groups_html}"""
 
     # --- Full email ---
     html = f"""\
@@ -257,17 +270,25 @@ def build_plain(new_and_inquiry, approval_pending, status_summary, total_open):
     if approval_pending:
         for q in approval_pending:
             approval_type = "CAD" if q["status"] == "CAD Approval Pending" else "Swatch"
+            product = q.get("product_name") or "-"
             lines.append(
                 f"  {q['quote_number']} | {q['customer_name']} | "
-                f"{q['customer_company']} | {approval_type} | "
+                f"{product} | {approval_type} | "
                 f"Updated: {format_date(q['updated_at'])}"
             )
     else:
         lines.append("  No quotes pending approval this week.")
 
-    lines += ["", f"OPEN QUOTES SUMMARY ({total_open} total)", "-" * 30]
-    for status, count in status_summary:
-        lines.append(f"  {status}: {count}")
+    lines += ["", f"ALL OPEN QUOTES BY STATUS ({total_open} total)", "-" * 30]
+    for status, quotes_in_status in status_summary:
+        count = len(quotes_in_status)
+        lines.append(f"\n  {status} ({count})")
+        for q in quotes_in_status:
+            product = q.get("product_name") or "-"
+            lines.append(
+                f"    {q['quote_number']} | {q['customer_name']} | "
+                f"{product} | Updated: {format_date(q['updated_at'])}"
+            )
 
     lines += ["", "---", "Automated report from the Custom Rug Quote Tracker."]
     return "\n".join(lines)
