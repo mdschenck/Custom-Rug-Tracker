@@ -9,6 +9,7 @@ Queries Supabase for open quotes and sends an HTML email summary:
 Triggered weekly via GitHub Actions (Monday 8 AM UTC).
 """
 
+import html
 import json
 import os
 import smtplib
@@ -103,6 +104,11 @@ def format_date(iso_str):
     return dt.strftime("%b %d, %Y")
 
 
+def esc(value):
+    """Escape a value for safe HTML insertion."""
+    return html.escape(str(value)) if value else "-"
+
+
 def build_html(new_and_inquiry, approval_pending, status_summary, total_open):
     """Build the full HTML email body."""
     today = datetime.now(timezone.utc).strftime("%B %d, %Y")
@@ -118,14 +124,13 @@ def build_html(new_and_inquiry, approval_pending, status_summary, total_open):
                     f'border-radius:3px;font-size:11px;font-weight:bold;margin-left:8px;">'
                     f'URGENT - No action taken</span>'
                 )
-            product = q.get("product_name") or "-"
             rows_html += f"""
             <tr>
-              <td style="padding:8px 12px;border-bottom:1px solid {COLOR_BORDER};">{q["quote_number"]}{urgent_badge}</td>
-              <td style="padding:8px 12px;border-bottom:1px solid {COLOR_BORDER};">{q["customer_name"]}</td>
-              <td style="padding:8px 12px;border-bottom:1px solid {COLOR_BORDER};">{q["customer_company"]}</td>
-              <td style="padding:8px 12px;border-bottom:1px solid {COLOR_BORDER};">{product}</td>
-              <td style="padding:8px 12px;border-bottom:1px solid {COLOR_BORDER};">{q["status"]}</td>
+              <td style="padding:8px 12px;border-bottom:1px solid {COLOR_BORDER};">{esc(q["quote_number"])}{urgent_badge}</td>
+              <td style="padding:8px 12px;border-bottom:1px solid {COLOR_BORDER};">{esc(q["customer_name"])}</td>
+              <td style="padding:8px 12px;border-bottom:1px solid {COLOR_BORDER};">{esc(q["customer_company"])}</td>
+              <td style="padding:8px 12px;border-bottom:1px solid {COLOR_BORDER};">{esc(q.get("product_name"))}</td>
+              <td style="padding:8px 12px;border-bottom:1px solid {COLOR_BORDER};">{esc(q["status"])}</td>
               <td style="padding:8px 12px;border-bottom:1px solid {COLOR_BORDER};">{format_date(q["created_at"])}</td>
             </tr>"""
 
@@ -156,12 +161,11 @@ def build_html(new_and_inquiry, approval_pending, status_summary, total_open):
         rows_html = ""
         for q in approval_pending:
             approval_type = "CAD" if q["status"] == "CAD Approval Pending" else "Swatch"
-            product = q.get("product_name") or "-"
             rows_html += f"""
             <tr>
-              <td style="padding:8px 12px;border-bottom:1px solid {COLOR_BORDER};">{q["quote_number"]}</td>
-              <td style="padding:8px 12px;border-bottom:1px solid {COLOR_BORDER};">{q["customer_name"]}</td>
-              <td style="padding:8px 12px;border-bottom:1px solid {COLOR_BORDER};">{product}</td>
+              <td style="padding:8px 12px;border-bottom:1px solid {COLOR_BORDER};">{esc(q["quote_number"])}</td>
+              <td style="padding:8px 12px;border-bottom:1px solid {COLOR_BORDER};">{esc(q["customer_name"])}</td>
+              <td style="padding:8px 12px;border-bottom:1px solid {COLOR_BORDER};">{esc(q.get("product_name"))}</td>
               <td style="padding:8px 12px;border-bottom:1px solid {COLOR_BORDER};">{approval_type}</td>
               <td style="padding:8px 12px;border-bottom:1px solid {COLOR_BORDER};">{format_date(q["updated_at"])}</td>
             </tr>"""
@@ -192,18 +196,17 @@ def build_html(new_and_inquiry, approval_pending, status_summary, total_open):
     for status, quotes_in_status in status_summary:
         rows_html = ""
         for q in quotes_in_status:
-            product = q.get("product_name") or "-"
             rows_html += f"""
               <tr>
-                <td style="padding:6px 12px;border-bottom:1px solid {COLOR_BORDER};">{q["quote_number"]}</td>
-                <td style="padding:6px 12px;border-bottom:1px solid {COLOR_BORDER};">{q["customer_name"]}</td>
-                <td style="padding:6px 12px;border-bottom:1px solid {COLOR_BORDER};">{product}</td>
+                <td style="padding:6px 12px;border-bottom:1px solid {COLOR_BORDER};">{esc(q["quote_number"])}</td>
+                <td style="padding:6px 12px;border-bottom:1px solid {COLOR_BORDER};">{esc(q["customer_name"])}</td>
+                <td style="padding:6px 12px;border-bottom:1px solid {COLOR_BORDER};">{esc(q.get("product_name"))}</td>
                 <td style="padding:6px 12px;border-bottom:1px solid {COLOR_BORDER};">{format_date(q["updated_at"])}</td>
               </tr>"""
 
         count = len(quotes_in_status)
         groups_html += f"""
-        <h3 style="color:{COLOR_PRIMARY};font-size:15px;margin:20px 0 8px;">{status} ({count})</h3>
+        <h3 style="color:{COLOR_PRIMARY};font-size:15px;margin:20px 0 8px;">{esc(status)} ({count})</h3>
         <table style="width:100%;border-collapse:collapse;font-size:14px;">
           <thead>
             <tr style="background:{COLOR_BG};">
